@@ -1,1 +1,1 @@
-export const DB_NAME = "Streaming App"
+module.exports.DB_NAME = "SnapFix"
