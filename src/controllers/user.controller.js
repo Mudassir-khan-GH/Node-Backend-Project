@@ -1,6 +1,8 @@
 const { User } = require('../models/user.model')
 const { uploadOnCloudinary } = require('../utils/cloudinary.js')
 const bcrypt = require('bcrypt');
+const { hashPassword,comparePassword } = require('../utils/bcryptFunctions.js')
+const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens.js')
 
 exports.createUser = async (req, res) => {
     const { username, email, password, image } = req.body;
@@ -27,7 +29,7 @@ exports.createUser = async (req, res) => {
         return res.status(500).json({ message: "Image upload failed" })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await hashPassword(password);
     
 
     try {
@@ -45,6 +47,40 @@ exports.createUser = async (req, res) => {
     }
 }
 
+exports.loginUser = async (req, res) => {
+    const { email, password } = req.body;
+    if(password === "" || email === ""){
+        return res.status(400).json({message : "All fields are required"})
+    }
+
+    const user = await User.findOne({email : email})
+    if(!user) return res.status(400).json({message : "User not registered !!"})
+
+    if(!await comparePassword(password, user.password)) return res.status(400).json({message : "Invalid credentials !!"})
+    
+    const accessToken = generateAccessToken(user)
+    const refreshToken = generateRefreshToken(user)
+
+    User.refreshToken = refreshToken
+    await User.save({validateBeforeSave : false})
+
+    const loggedInUser = await User.findById(user._id).select("-password -__v -createdAt -updatedAt -image -refreshToken")
+    
+    const options = {
+        httpOnly : true,
+        secure : true
+    }
+
+    return res.status(200)
+    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .json({message : "login Successful"})
+
+}
+
+exports.logoutuser = async (req, res) => {
+    
+}
 
 exports.registerUser = (req, res) => {
     res.render("register")
