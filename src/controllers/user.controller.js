@@ -3,7 +3,7 @@ const { uploadOnCloudinary } = require('../utils/cloudinary.js')
 const bcrypt = require('bcrypt');
 const { hashPassword, comparePassword } = require('../utils/bcryptFunctions.js')
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens.js')
-
+const jwt = require('jsonwebtoken');
 
 const options = {
     httpOnly: true,
@@ -93,6 +93,29 @@ exports.logoutUser = async (req, res) => {
         .clearCookie("accessToken", options)
         .json({ message: "Logout Successful" })
 }
+
+exports.refreshAccessToken = async(req, res) => {
+    const incomingRefreshToken = req.cookies?.refreshToken
+    if (!incomingRefreshToken) return res.status(401).json({ message: "Unauthorized Access" })
+
+    const decoded_token = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+
+    const user = await User.findById(decoded_token._id).select("-password -__v -createdAt -updatedAt -image")
+    if (!user) return res.status(401).json({ message: "User not found" })
+    
+    if(user.refreshToken !== incomingRefreshToken) return res.status(401).json({ message: "Invalid refresh token" })
+
+    const accessToken = generateAccessToken(user)
+    const refreshToken = generateRefreshToken(user)
+
+    user.refreshToken = refreshToken
+    await user.save({ validateBeforeSave: false })
+
+    return res.status(200)
+    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .json({ message: "Tokens Refreshed Successfully" })
+    }
 
 exports.registerUser = (req, res) => {
     res.render("register")

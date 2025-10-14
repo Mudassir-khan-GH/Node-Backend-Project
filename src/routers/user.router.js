@@ -9,6 +9,7 @@ router.get("/register", registerUser)
 router.post("/create", upload.single('image'), createUser)
 
 router.post('/login', loginUser)
+router.post('/refresh-token', refreshAccessToken)
 
 // secured routes
 
