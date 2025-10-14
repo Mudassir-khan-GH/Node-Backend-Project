@@ -68,8 +68,8 @@ exports.loginUser = async (req, res) => {
     const accessToken = generateAccessToken(user)
     const refreshToken = generateRefreshToken(user)
 
-    User.refreshToken = refreshToken
-    await User.save({ validateBeforeSave: false })
+    user.refreshToken = refreshToken
+    await user.save({ validateBeforeSave: false })
 
     const loggedInUser = await User.findById(user._id).select("-password -__v -createdAt -updatedAt -image -refreshToken")
 
@@ -82,7 +82,7 @@ exports.loginUser = async (req, res) => {
 
 exports.logoutUser = async (req, res) => {
     const user = await User.findOneAndUpdate(
-        decoded_data._id,
+        { _id: decoded_data._id },
         {
             $set: { refreshToken: undefined }
         })
@@ -115,8 +115,35 @@ exports.refreshAccessToken = async(req, res) => {
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
     .json({ message: "Tokens Refreshed Successfully" })
+}
+
+exports.changePassword = async(req, res) => {
+    const { oldPassword, newPassword } = req.body
+    if ([oldPassword, newPassword].some((field) => field?.trim() === "")) {
+        return res.status(400).json({ message: "All fields are required" })
     }
+
+    const user = await User.findById(req.user?._id)
+    if (!user) return res.status(401).json({ message: "User not found" })
+    
+    const isPasswordMatched = comparePassword(oldPassword, user.password)
+    if (!isPasswordMatched) return res.status(400).json({ message: "Password is incorrect" })
+
+    user.password = await hashPassword(newPassword)
+    await user.save({validateBeforeSave : false})
+
+    res.status(200).json({ message: "Password changed successfully" })
+}
+
+exports.getCurrentUser = async (req, res) => {
+    const user = req.user
+    res.status(200).json({ user })
+}
 
 exports.registerUser = (req, res) => {
     res.render("register")
+}
+
+exports.loginUserPage = (req, res) => {
+    res.render("login")
 }
