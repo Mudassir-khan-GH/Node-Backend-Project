@@ -1,9 +1,10 @@
 const { User } = require('../models/user.model')
-const { uploadOnCloudinary } = require('../utils/cloudinary.js')
+const { uploadOnCloudinary, deleteFromCloudinary } = require('../utils/cloudinary.js')
 const bcrypt = require('bcrypt');
 const { hashPassword, comparePassword } = require('../utils/bcryptFunctions.js')
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens.js')
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
 
 const options = {
     httpOnly: true,
@@ -31,6 +32,7 @@ exports.createUser = async (req, res) => {
 
     const imageURL = await uploadOnCloudinary(imageLocalPath)
 
+    fs.unlinkSync(imageLocalPath)
 
     if (!imageURL) {
         return res.status(500).json({ message: "Image upload failed" })
@@ -138,6 +140,34 @@ exports.changePassword = async(req, res) => {
 exports.getCurrentUser = async (req, res) => {
     const user = req.user
     res.status(200).json({ user })
+}
+
+exports.changeImage = async(req, res) => {
+    const imageLocalPath = req.file?.path
+    if (!imageLocalPath) {
+        return res.status(400).json({ message: "Image is required" })
+    }
+    const imageURL = await uploadOnCloudinary(imageLocalPath)
+    if (!imageURL){
+        return res.status(500).json({ message: "Image upload on cloudinary failed" })
+    }
+
+    const userForGettingPreviousImageURL = await User.findById(req.user?._id)
+    if(!userForGettingPreviousImageURL) return res.status(401).json({ message: "User not found" })
+    
+    const previousImageURL = userForGettingPreviousImageURL.image
+    if(!previousImageURL){
+        return res.status(404).json({ message: "No previous image found" })
+    }
+
+    await deleteFromCloudinary(previousImageURL)
+
+    const user = await User.findByIdAndUpdate(req.user?._id, { image: imageURL }, { new: true })
+    if (!user) return res.status(401).json({ message: "User not found" })
+    
+    await deleteFromCloudinary(req.user)
+
+    res.status(200).json({ message: "Image updated successfully", image: user.image })
 }
 
 exports.registerUser = (req, res) => {
