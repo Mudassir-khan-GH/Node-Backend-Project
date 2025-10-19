@@ -1,6 +1,5 @@
 const { Post } = require('../models/post.model')
 const { uploadOnCloudinary, deleteFromCloudinary } = require('../utils/cloudinary.js')
-const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const  mongoose  = require('mongoose');
 
@@ -17,7 +16,7 @@ exports.createPost = async (req, res) => {
             return res.status(500).json({message: "Image upload failed"})
         }
         fs.unlinkSync(localPath)
-        const newPost = new Post({title, description, image: imageURL})
+        const newPost = new Post({title, description, image: imageURL, createdBy: req.user._id})
         await newPost.save()
 
         res

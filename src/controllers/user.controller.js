@@ -1,11 +1,15 @@
-const { User } = require('../models/user.model')
+const { User } = require('../models/user.model.js')
+const { Post } = require('../models/post.model.js')
+const { Like } = require('../models/like.model.js')
 const bcrypt = require('bcrypt');
+const { uploadOnCloudinary, deleteFromCloudinary } = require('../utils/cloudinary.js')
 const { hashPassword, comparePassword } = require('../utils/bcryptFunctions.js')
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens.js')
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const  mongoose  = require('mongoose');
-const { sendVerificationEmail } = require('../utils/sendEmail.js')
+const { sendVerificationEmail } = require('../utils/sendEmail.js');
+const { log } = require('console');
 
 const options = {
     httpOnly: true,
@@ -55,7 +59,6 @@ exports.createUser = async (req, res) => {
         res.status(500).json({ message: "Error creating user" })
     }
 }
-
 exports.loginUser = async (req, res) => {
     const { email, password } = req.body;
     if (password === "" || email === "") {
@@ -81,7 +84,6 @@ exports.loginUser = async (req, res) => {
         .json({ message: "login Successful" })
 
 }
-
 exports.logoutUser = async (req, res) => {
     const user = await User.findOneAndUpdate(
         { _id: decoded_data._id },
@@ -95,7 +97,6 @@ exports.logoutUser = async (req, res) => {
         .clearCookie("accessToken", options)
         .redirect("/api/v1/user/login")
 }
-
 exports.refreshAccessToken = async (req, res) => {
     const incomingRefreshToken = req.cookies?.refreshToken
     if (!incomingRefreshToken) return res.status(401).json({ message: "Unauthorized Access" })
@@ -118,7 +119,6 @@ exports.refreshAccessToken = async (req, res) => {
         .cookie("accessToken", accessToken, options)
         .json({ message: "Tokens Refreshed Successfully" })
 }
-
 exports.changePassword = async (req, res) => {
     const { oldPassword, newPassword } = req.body
     if ([oldPassword, newPassword].some((field) => field?.trim() === "")) {
@@ -137,12 +137,10 @@ exports.changePassword = async (req, res) => {
     res.status(200)
         .redirect("/api/v1/user/home")
 }
-
 exports.getCurrentUser = async (req, res) => {
     const user = req.user
     res.status(200).json({ user })
 }
-
 exports.changeImage = async (req, res) => {
     const imageLocalPath = req.file?.path
     if (!imageLocalPath) {
@@ -160,8 +158,10 @@ exports.changeImage = async (req, res) => {
     if (!previousImageURL) {
         return res.status(404).json({ message: "No previous image found" })
     }
+    console.log(previousImageURL);
+    
     await deleteFromCloudinary(previousImageURL)
-    fs.unlink(imageLocalPath)
+    fs.unlinksync(imageLocalPath)
     const user = await User.findByIdAndUpdate(req.user?._id, { image: imageURL }, { new: true })
     if (!user) return res.status(401).json({ message: "User not found" })
 
@@ -262,5 +262,58 @@ exports.userVerificationPage = async (req, res) => {
     res.render("userVerification", { user: req?.user })
 }
 exports.getHomePage = async (req, res) => {
-    res.render("home", { user: req?.user })
+    const _id = req.user?._id
+    const dataForHome = await Post.aggregate([
+        {
+            $lookup: {
+                from: "users",
+                localField: "createdBy",
+                foreignField: "_id",
+                as: "creator"
+            }
+        },
+        {
+            $lookup:{
+                from: "likes",
+                localField: "_id",
+                foreignField: "post",
+                as: "likes"
+            }
+        },
+        {
+            $addFields:{
+                likes: {
+                    $size: "$likes"
+                },
+                isCurrentUserLiked: {
+                    $in: [new mongoose.Types.ObjectId(_id), "$likes.likedBy"]
+                }
+            }
+        },
+        {
+            $sort: {
+                createdAt : -1
+            }
+        },
+        {
+            $limit: 20
+        },
+        {
+            $project: {
+                title: 1,
+                description: 1,
+                image: 1,
+                status: 1,
+                createdAt: 1,
+                likes: 1,
+                isCurrentUserLiked: 1,
+                "creator.username": 1,
+                "creator.image": 1,
+                "creator.email": 1,
+                "creator.verification": 1,
+            }
+        }
+    ])
+   
+    res.render("home", { user: req?.user , allPosts: dataForHome})
 }
