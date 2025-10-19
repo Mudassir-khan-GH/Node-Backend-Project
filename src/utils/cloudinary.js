@@ -24,11 +24,14 @@ const uploadOnCloudinary = async (localFilePath) => {
 const deleteFromCloudinary = async (url) => {
   try {
     if(!url) return null;
+    console.log(url);
+    
     const parts = url.split('/');
     const uploadIndex = parts.findIndex((p) => p === "upload");
     const publicIdWithExt = parts.slice(uploadIndex + 1).join("/");
     const publicId = publicIdWithExt.substring(0, publicIdWithExt.lastIndexOf("."));
     const result = await cloudinary.uploader.destroy(publicId);
+    
     return result;
   } catch (error) {
     console.error("Error deleting from Cloudinary:", error);

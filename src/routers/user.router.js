@@ -1,5 +1,5 @@
 const express = require('express')
-const { createUser, registerUser, loginUser, logoutUser, getCurrentUser, changePassword, refreshAccessToken, loginUserPage, changePasswordPage, changeImagePage ,} = require('../controllers/user.controller.js')
+const { createUser, registerUser, loginUser, logoutUser, getCurrentUser, changePassword, refreshAccessToken, loginUserPage, changePasswordPage, changeImagePage, changeImage ,} = require('../controllers/user.controller.js')
 const { upload } = require('../middlewares/multer.middleware.js')
 const { verifyJWT } = require('../middlewares/auth.middleware.js')
 
@@ -16,6 +16,10 @@ router.post('/refreshToken', refreshAccessToken)
 
 router.get('/changePassword', verifyJWT, changePasswordPage)
 router.get('/changeImage', verifyJWT, changeImagePage)
+router.post('/changeImage', verifyJWT, upload.single('image'), changeImage)
+router.post('/changePassword', verifyJWT, changePassword)
+
+
 
 
 router.post('/getCurrentUser', verifyJWT, getCurrentUser)

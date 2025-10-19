@@ -44,13 +44,12 @@ exports.createUser = async (req, res) => {
     try {
         const createdUser = await User.create({ username, email, password: hashedPassword, image: imageURL })
 
-        console.log(createdUser);
-
         const confirmation = await User.findById(createdUser._id).select("-password -__v -createdAt -updatedAt -image")
         if (!confirmation) {
             return res.status(500).json({ message: "User creation failed" })
         }
-        res.status(200).json({ createdUser })
+        res.status(200)
+        .redirect("/api/v1/user/home")
     } catch (error) {
         res.status(500).json({ message: "Error creating user" })
     }
@@ -134,7 +133,8 @@ exports.changePassword = async(req, res) => {
     user.password = await hashPassword(newPassword)
     await user.save({validateBeforeSave : false})
 
-    res.status(200).json({ message: "Password changed successfully" })
+    res.status(200)
+    .redirect("/api/v1/user/home")
 }
 
 exports.getCurrentUser = async (req, res) => {
@@ -152,23 +152,25 @@ exports.changeImage = async(req, res) => {
         return res.status(500).json({ message: "Image upload on cloudinary failed" })
     }
 
-    const userForGettingPreviousImageURL = await User.findById(req.user?._id)
+    const userForGettingPreviousImageURL = await User.findById(req.user?._id).select("-password -refreshToken")
     if(!userForGettingPreviousImageURL) return res.status(401).json({ message: "User not found" })
     
     const previousImageURL = userForGettingPreviousImageURL.image
     if(!previousImageURL){
         return res.status(404).json({ message: "No previous image found" })
     }
-
     await deleteFromCloudinary(previousImageURL)
-
+    fs.unlink(imageLocalPath)
     const user = await User.findByIdAndUpdate(req.user?._id, { image: imageURL }, { new: true })
     if (!user) return res.status(401).json({ message: "User not found" })
-    
-    await deleteFromCloudinary(req.user)
 
-    res.status(200).json({ message: "Image updated successfully", image: user.image })
+
+    res
+    .status(200)
+    .redirect("/api/v1/user/home")
 }
+
+// Render Pages
 
 exports.registerUser = (req, res) => {
     res.render("register")
@@ -181,5 +183,5 @@ exports.changePasswordPage = (req, res) => {
     res.render("changePassword")
 }
 exports.changeImagePage = (req, res) => {
-    res.render("changeImage")
+    res.render("changeImage", {user : req?.user})
 }

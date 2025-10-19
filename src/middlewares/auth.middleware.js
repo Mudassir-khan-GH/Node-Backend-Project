@@ -10,7 +10,7 @@ const verifyJWT = async (req, res, next) => {
 
     const user = await User.findById(
         decoded_data._id
-    ).select("-password -__v -createdAt -updatedAt -image -refreshToken")
+    ).select("-password -__v -createdAt -updatedAt -refreshToken")
 
     if (!user) return res.status(401).json({ message: "User not found" })
 
