@@ -19,18 +19,6 @@ const postSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
-    upvotes: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User"
-        }
-    ],
-    comments: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User"
-        }
-    ],
     status:{
         type: String,
         enum: ["pending", "resolved"],
@@ -38,4 +26,6 @@ const postSchema = mongoose.Schema({
     }
 }, { timestamps: true });
 
-export const Post = mongoose.model('Post', postSchema);
+const Post = mongoose.model('Post', postSchema);
+
+module.exports = { Post };

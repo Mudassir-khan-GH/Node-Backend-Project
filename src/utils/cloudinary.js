@@ -23,9 +23,7 @@ const uploadOnCloudinary = async (localFilePath) => {
 
 const deleteFromCloudinary = async (url) => {
   try {
-    if(!url) return null;
-    console.log(url);
-    
+    if(!url) return null;    
     const parts = url.split('/');
     const uploadIndex = parts.findIndex((p) => p === "upload");
     const publicIdWithExt = parts.slice(uploadIndex + 1).join("/");

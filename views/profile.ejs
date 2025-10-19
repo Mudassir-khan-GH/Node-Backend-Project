@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile | SnapFix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-[#f8fafc] min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center">
+        <h1 class="text-2xl font-semibold text-blue-600 tracking-tight">SnapFix.</h1>
+        <div class="flex w-1/2 justify-end gap-5 ">
+          <a href="/api/v1/user/home"><button class="text-gray-600 hover:text-blue-600 font-medium transition"> Home</button></a>
+          <a href="/api/v1/user/logout"><button class="text-gray-600 hover:text-blue-600 font-medium transition">← Logout</button></a>
+        </div>
+    </nav>
+
+    <!-- Profile Container -->
+    <main class="flex flex-col items-center px-4 mt-10">
+      <div class="bg-white w-full max-w-md rounded-3xl shadow-sm overflow-hidden text-center py-6 px-6">
+        <!-- Profile Image -->
+        <img
+          src="<%= user?.image%>"
+          alt="Profile"
+          class="w-36 h-36 rounded-full border-4 border-white object-cover mx-auto shadow-sm"
+        />
+
+        <!-- User Info -->
+        <div class="mt-6">
+          <h2 class="text-xl font-semibold text-gray-800"><%= user?.username%></h2>
+          <p class="text-gray-500 text-sm mb-5"><%= user?.email%></p>
+
+          <!-- Stats -->
+          <div class="flex justify-center gap-10 mb-6">
+            <div>
+              <p class="text-lg font-semibold text-gray-800"><%= user?.followers%></p>
+              <p class="text-xs text-gray-500">Followers</p>
+            </div>
+            <div>
+              <p class="text-lg font-semibold text-gray-800"><%= user?.followings%></p>
+              <p class="text-xs text-gray-500">Following</p>
+            </div>
+          </div>
+
+          <!-- Verification -->
+          <div class="flex flex-col items-center gap-2 mb-8">
+            <span class="text-sm text-gray-600 flex items-center gap-1">
+              Verified:
+              <% if(user.verification) { %>
+                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                ✅
+              </span>
+             <% } else { %>
+               <span class="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full font-medium">
+                ❌
+               </span>
+             <% } %>
+            </span>
+            <button
+              class="text-blue-600 border border-blue-500 px-4 py-1.5 text-sm rounded-full hover:bg-blue-600 hover:text-white transition"
+            ><a href="/api/v1/user/verify">
+              Verify Account
+              </a>
+            </button>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col gap-3">
+            <button
+              class="w-full bg-blue-600 text-white text-sm py-2 rounded-full hover:bg-blue-700 transition"
+            >
+              Change Profile Image
+            </button>
+            <button
+              class="w-full bg-gray-100 text-gray-700 text-sm py-2 rounded-full hover:bg-gray-200 transition"
+            >
+              Change Password
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
