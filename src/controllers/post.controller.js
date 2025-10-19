@@ -1,0 +1,29 @@
+const { Post } = require('../models/post.model')
+const { uploadOnCloudinary, deleteFromCloudinary } = require('../utils/cloudinary.js')
+const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const  mongoose  = require('mongoose');
+
+exports.createPost = async (req, res) => {
+    const {title, description} = req.body
+    if(!title || !description || !req.file){
+        return res.status(400).json({message: "All fields are required"})
+    }
+    try {
+        const localPath = req.file.path
+        const imageURL = await uploadOnCloudinary(localPath)
+
+        if(!imageURL){
+            return res.status(500).json({message: "Image upload failed"})
+        }
+        fs.unlinkSync(localPath)
+        const newPost = new Post({title, description, image: imageURL})
+        await newPost.save()
+
+        res
+        .status(201)
+        .redirect('/api/v1/user/home')
+    } catch (error) {
+       res.status(500).json({message: "Problem occured while creating post"}) 
+    }
+}

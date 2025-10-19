@@ -1,8 +1,4 @@
 const { User } = require('../models/user.model')
-const { Post } = require('../models/post.model')
-const { Follower } = require('../models/follower.model')
-const { Like } = require('../models/like.model')
-const { uploadOnCloudinary, deleteFromCloudinary } = require('../utils/cloudinary.js')
 const bcrypt = require('bcrypt');
 const { hashPassword, comparePassword } = require('../utils/bcryptFunctions.js')
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens.js')
