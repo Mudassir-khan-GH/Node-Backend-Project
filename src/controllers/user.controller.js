@@ -177,3 +177,9 @@ exports.registerUser = (req, res) => {
 exports.loginUserPage = (req, res) => {
     res.render("login")
 }
+exports.changePasswordPage = (req, res) => {
+    res.render("changePassword")
+}
+exports.changeImagePage = (req, res) => {
+    res.render("changeImage")
+}
