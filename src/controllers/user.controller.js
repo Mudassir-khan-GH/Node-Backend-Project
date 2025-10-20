@@ -18,6 +18,7 @@ const options = {
 
 
 exports.createUser = async (req, res) => {
+    const start = Date.now();
     const { username, email, password, image } = req.body;
 
 
@@ -25,7 +26,7 @@ exports.createUser = async (req, res) => {
         return res.status(400).json({ message: "All fields are required" })
     }
 
-    const result = await User.findOne({ email: email })
+    const result = await User.exists({ email: email })
     if (result) {
         return res.status(400).json({ message: "Email already exists" })
     }
@@ -37,7 +38,11 @@ exports.createUser = async (req, res) => {
 
     const imageURL = await uploadOnCloudinary(imageLocalPath)
 
-    fs.unlinkSync(imageLocalPath)
+    fs.unlink(imageLocalPath, (err) => {
+        if (err) {
+            console.error("Error deleting local image file:", err)
+        }
+    })
 
     if (!imageURL) {
         return res.status(500).json({ message: "Image upload failed" })
@@ -48,15 +53,11 @@ exports.createUser = async (req, res) => {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     try {
         const createdUser = await User.create({ username, email, password: hashedPassword, image: imageURL , verificationCode});
-
-        const confirmation = await User.findById(createdUser._id).select("-password -__v -createdAt -updatedAt -image")
-        if (!confirmation) {
-            return res.status(500).json({ message: "User creation failed" })
-        }
-        res.status(200)
-            .redirect("/api/v1/user/home")
+        const duration = Date.now() - start;
+console.log(`User creation took ${duration} ms`);
+        res.redirect("/api/v1/user/login")
     } catch (error) {
-        res.status(500).json({ message: "Error creating user" })
+        res.status(500).json({ message: "Error creating user",error: error.message  })
     }
 }
 exports.loginUser = async (req, res) => {
@@ -81,7 +82,7 @@ exports.loginUser = async (req, res) => {
     return res.status(200)
         .cookie("refreshToken", refreshToken, options)
         .cookie("accessToken", accessToken, options)
-        .json({ message: "login Successful" })
+        .redirect("/api/v1/user/home")
 
 }
 exports.logoutUser = async (req, res) => {
@@ -146,6 +147,7 @@ exports.changeImage = async (req, res) => {
     if (!imageLocalPath) {
         return res.status(400).json({ message: "Image is required" })
     }
+    
     const imageURL = await uploadOnCloudinary(imageLocalPath)
     if (!imageURL) {
         return res.status(500).json({ message: "Image upload on cloudinary failed" })
@@ -161,9 +163,14 @@ exports.changeImage = async (req, res) => {
     console.log(previousImageURL);
     
     await deleteFromCloudinary(previousImageURL)
-    fs.unlinksync(imageLocalPath)
-    const user = await User.findByIdAndUpdate(req.user?._id, { image: imageURL }, { new: true })
-    if (!user) return res.status(401).json({ message: "User not found" })
+    fs.unlink(imageLocalPath, (err) => {
+        if (err) {
+            console.error("Error deleting local image file:", err)
+        }   
+    })
+    userForGettingPreviousImageURL.image = imageURL
+    await userForGettingPreviousImageURL.save({ validateBeforeSave: false })
+    if (!userForGettingPreviousImageURL) return res.status(401).json({ message: "User not found" })
 
 
     res
