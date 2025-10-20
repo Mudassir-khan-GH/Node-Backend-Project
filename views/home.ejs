@@ -83,11 +83,20 @@
               src= "<%= record.image %>"
               alt="Post Image" class="rounded-lg border border-gray-200 max-h-80 object-cover w-full" />
             <div class="flex justify-between items-center mt-3 text-sm text-gray-500"> 
-              <a href="/api/v1/like/add/<%=user?._id%>/<%=record._id%>" class="no-underline text-blue-600">
+              <% if(allPosts[0].isCurrentUserLiked){ %>
+                <a  class="no-underline text-blue-600">
               <button
-                class="text-blue-600 hover:text-gray-600">👍 <%=record.likes%> Upvotes
+                class="text-blue-600">👍 <%=record.likes%> Upvotes
               </button> 
               </a>
+             <% } else { %>
+                <a href="/api/v1/like/add/<%=user?._id%>/<%=record._id%>" class="no-underline text-gray-600">
+              <button
+                class="text-gray-600">👍 <%=record.likes%> Upvotes
+              </button> 
+              </a>
+            <% }
+              %>
           </div>
           <% } %>
             <% }) %>

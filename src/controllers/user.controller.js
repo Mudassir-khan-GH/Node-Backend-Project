@@ -1,24 +1,25 @@
 const { User } = require('../models/user.model.js')
 const { Post } = require('../models/post.model.js')
 const { Like } = require('../models/like.model.js')
+const fs = require("fs/promises");
+const sharp = require("sharp");
 const bcrypt = require('bcrypt');
 const { uploadOnCloudinary, deleteFromCloudinary } = require('../utils/cloudinary.js')
 const { hashPassword, comparePassword } = require('../utils/bcryptFunctions.js')
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens.js')
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
+// const fs = require('fs');
 const  mongoose  = require('mongoose');
 const { sendVerificationEmail } = require('../utils/sendEmail.js');
 const { log } = require('console');
+const { compressImage } = require('../utils/compress.js');
 
 const options = {
     httpOnly: true,
     secure: true
 }
 
-
 exports.createUser = async (req, res) => {
-    const start = Date.now();
     const { username, email, password, image } = req.body;
 
 
@@ -35,14 +36,15 @@ exports.createUser = async (req, res) => {
     if (!imageLocalPath) {
         return res.status(400).json({ message: "Image is required" })
     }
+    const optimizedPath =await compressImage(imageLocalPath);
 
-    const imageURL = await uploadOnCloudinary(imageLocalPath)
 
-    fs.unlink(imageLocalPath, (err) => {
-        if (err) {
-            console.error("Error deleting local image file:", err)
-        }
-    })
+    const imageURL = await uploadOnCloudinary(optimizedPath);
+
+     Promise.allSettled([
+      fs.unlink(imageLocalPath),
+      fs.unlink(optimizedPath)
+    ]).catch(console.error);
 
     if (!imageURL) {
         return res.status(500).json({ message: "Image upload failed" })
@@ -53,8 +55,6 @@ exports.createUser = async (req, res) => {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     try {
         const createdUser = await User.create({ username, email, password: hashedPassword, image: imageURL , verificationCode});
-        const duration = Date.now() - start;
-console.log(`User creation took ${duration} ms`);
         res.redirect("/api/v1/user/login")
     } catch (error) {
         res.status(500).json({ message: "Error creating user",error: error.message  })
@@ -147,8 +147,8 @@ exports.changeImage = async (req, res) => {
     if (!imageLocalPath) {
         return res.status(400).json({ message: "Image is required" })
     }
-    
-    const imageURL = await uploadOnCloudinary(imageLocalPath)
+    const optimizedPath = await compressImage(imageLocalPath);
+    const imageURL = await uploadOnCloudinary(optimizedPath)
     if (!imageURL) {
         return res.status(500).json({ message: "Image upload on cloudinary failed" })
     }
@@ -160,14 +160,14 @@ exports.changeImage = async (req, res) => {
     if (!previousImageURL) {
         return res.status(404).json({ message: "No previous image found" })
     }
-    console.log(previousImageURL);
     
     await deleteFromCloudinary(previousImageURL)
-    fs.unlink(imageLocalPath, (err) => {
-        if (err) {
-            console.error("Error deleting local image file:", err)
-        }   
-    })
+
+    Promise.allSettled([
+        fs.unlink(imageLocalPath),
+        fs.unlink(optimizedPath)
+      ]).catch(console.error);
+    
     userForGettingPreviousImageURL.image = imageURL
     await userForGettingPreviousImageURL.save({ validateBeforeSave: false })
     if (!userForGettingPreviousImageURL) return res.status(401).json({ message: "User not found" })
@@ -321,6 +321,7 @@ exports.getHomePage = async (req, res) => {
             }
         }
     ])
+   console.log(dataForHome);
    
     res.render("home", { user: req?.user , allPosts: dataForHome})
 }
