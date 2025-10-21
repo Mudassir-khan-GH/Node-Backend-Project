@@ -321,7 +321,6 @@ exports.getHomePage = async (req, res) => {
             }
         }
     ])
-   console.log(dataForHome);
    
     res.render("home", { user: req?.user , allPosts: dataForHome})
 }

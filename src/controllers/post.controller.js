@@ -26,3 +26,21 @@ exports.createPost = async (req, res) => {
        res.status(500).json({message: "Problem occured while creating post"}) 
     }
 }
+exports.removePost = async (req, res) => {
+    const { id } = req.params
+    const { image } = req.body
+    const response = await Post.findByIdAndDelete({ _id: id })
+    if(response){
+        await deleteFromCloudinary(image)
+        res
+        .status(200)
+        .redirect("/api/v1/post/userPosts")
+    }
+}
+exports.userPosts = async (req, res) => {
+    const { _id } = req.user
+    const userPosts = await Post.find({createdBy : _id})
+    res
+    .status(200)
+    .render("userPosts", {posts : userPosts, user: req.user})
+} 
