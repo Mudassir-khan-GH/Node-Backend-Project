@@ -1,1 +1,1 @@
-module.exports.DB_NAME = "SnapFix"
+module.exports.DB_NAME = "test"

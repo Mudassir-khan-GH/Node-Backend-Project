@@ -288,12 +288,23 @@ exports.getHomePage = async (req, res) => {
             }
         },
         {
+            $lookup: {
+                from: "followers",
+                localField: "creator._id",
+                foreignField: "followedTo",
+                as: "followers"
+            }
+        },
+        {
             $addFields:{
                 likes: {
                     $size: "$likes"
                 },
                 isCurrentUserLiked: {
                     $in: [new mongoose.Types.ObjectId(_id), "$likes.likedBy"]
+                },
+                isCurrentUserFollowed: {
+                    $in: [new mongoose.Types.ObjectId(_id), "$followers.follower"]
                 }
             }
         },
@@ -314,13 +325,14 @@ exports.getHomePage = async (req, res) => {
                 createdAt: 1,
                 likes: 1,
                 isCurrentUserLiked: 1,
+                isCurrentUserFollowed: 1,
                 "creator.username": 1,
+                "creator._id": 1,
                 "creator.image": 1,
                 "creator.email": 1,
                 "creator.verification": 1,
             }
         }
     ])
-   
     res.render("home", { user: req?.user , allPosts: dataForHome})
 }
