@@ -6,7 +6,7 @@ It allows users to report local issues (like damaged roads or broken street ligh
 ---
 
 ## 🚀 Live Demo
-🔗 [Deployed on Render](https://your-render-app-url-here)  
+🔗 [Deployed on Render](https://node-snapfix-backend-project.onrender.com/api/v1/user/register)  
 
 
 ---
@@ -104,7 +104,8 @@ SnapFix/
 ```
 
 ### 👨‍💻 Author
-Mudassir Khan
-📧 [mudassirpak47@gmail.com]  
-🔗 [Your LinkedIn or Portfolio]  
+Mudassir Khan  
+📧 [Contact via email](mudassirpak47@gmail.com)  
+🔗 [LinkedIn Profile](https://www.linkedin.com/in/mudassir-khan-48a691316/)  
+🔗 [Github Repository](https://github.com/Mudassir-khan-GH/Node-SnapFix-Backend-Project)  
 💼 Looking for Internship / Entry-Level Developer Opportunities
