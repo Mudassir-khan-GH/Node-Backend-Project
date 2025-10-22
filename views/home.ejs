@@ -74,7 +74,7 @@
                 <img src="<%=record.creator[0].image%>" alt="User" class="w-10 h-10 rounded-full object-cover border border-blue-300" />
                 <div>
                   <h3 class="font-semibold text-gray-800"><%= record.creator[0].username%></h3>
-                  <p class="text-xs text-gray-500"><%=record.createdAt.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) %></p>
+                  <p class="text-xs text-gray-500"><%=record.createdAt.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' , timeZone: 'Asia/Karachi'}) %></p>
                 </div>
               </div>
               
